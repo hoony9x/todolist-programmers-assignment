@@ -1,0 +1,22 @@
+{
+  "name": "toodolist-programmers-assignment",
+  "version": "1.0.0",
+  "description": "This project is web application for 2nd assignment from \"Silicon Valley Job Fair 2019 \".",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khhan1993/TodoList-programmers-assignment.git"
+  },
+  "author": {
+    "name": "Kihoon Han",
+    "email": "khhan1993@gmail.com",
+    "url": "https://github.com/khhan1993"
+  },
+  "bugs": {
+    "url": "https://github.com/khhan1993/TodoList-programmers-assignment/issues"
+  },
+  "homepage": "https://github.com/khhan1993/TodoList-programmers-assignment#readme",
+  "private": true
+}
