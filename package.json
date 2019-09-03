@@ -5,7 +5,7 @@
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node src/index.js",
-    "client": "cd ./src/webapp && if test \"$NODE_ENV\" = \"production\" ; then npm run build ; else BROWSER=none npm start ; fi "
+    "client": "cd ./src/webapp && npm install && if test \"$NODE_ENV\" = \"production\" ; then npm run build ; else BROWSER=none npm start ; fi "
   },
   "repository": {
     "type": "git",
