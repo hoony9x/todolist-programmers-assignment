@@ -36,8 +36,17 @@ import {
   Label as LabelIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  DoneOutline as DoneIcon
 } from '@material-ui/icons';
+
+import DateFnsUtils from '@date-io/date-fns';
+import enLocale from "date-fns/locale/en-US";
+import {
+  MuiPickersUtilsProvider,
+  KeyboardTimePicker,
+  KeyboardDatePicker,
+} from '@material-ui/pickers';
 
 const styles = (theme) => ({
   root: {
@@ -116,7 +125,7 @@ class App extends React.Component {
           id: 1,
           title: "Test title 1",
           content: "Test content 1",
-          deadline: new Date(),
+          deadline: (new Date()).toISOString(),
           priority: 0,
           finished: false
         },
@@ -127,14 +136,21 @@ class App extends React.Component {
           deadline: null,
           priority: 0,
           finished: false
+        },
+        {
+          id: 3,
+          title: "Test title 3",
+          content: "Test content 3",
+          deadline: (new Date()).toISOString(),
+          priority: 0,
+          finished: true
         }
       ],
       is_add_dialog_opened: false,
       new_todo_title: "",
       new_todo_content: "\n\n\n",
-      new_todo_deadline: "",
-      new_todo_priority: 0,
-      show_incomplete_only: false
+      new_todo_deadline: null,
+      new_todo_priority: 0
     };
   }
 
@@ -170,19 +186,19 @@ class App extends React.Component {
     });
   };
 
-  handleNewTodoDeadlineChange = (e) => {
-    e.preventDefault();
-
+  handleNewTodoDeadlineChange = (date) => {
     this.setState({
-      new_todo_deadline: e.target.value
+      new_todo_deadline: date
     });
+
+    console.log(date);
   };
 
   handleClickClearNewDeadline = (e) => {
     e.preventDefault();
 
     this.setState({
-      new_todo_deadline: ""
+      new_todo_deadline: null
     });
   };
 
@@ -196,14 +212,22 @@ class App extends React.Component {
   submitNewTodo = (e) => {
     e.preventDefault();
 
-    console.log(this.state);
+    let datetime_iso_string;
+    if(Boolean(this.state.new_todo_deadline) === false) {
+      datetime_iso_string = "";
+    }
+    else {
+      datetime_iso_string = (new Date(datetime_iso_string)).toISOString();
+    }
   };
 
-  generateDateTimeString = (dateObj) => {
-    if(Boolean(dateObj) === false) {
+  generateDateTimeString = (date_string) => {
+    if(Boolean(date_string) === false) {
       return "-";
     }
     else {
+      const dateObj = new Date(date_string);
+
       const year = dateObj.getFullYear().toString();
       let month = (parseInt(dateObj.getMonth(), 10) + 1).toString();
       let date = dateObj.getDate().toString();
@@ -226,7 +250,7 @@ class App extends React.Component {
         minute = "0" + minute;
       }
 
-      return year + "-" + month + "-" + date + " " + hour + ":" + minute + ":00";
+      return year + "-" + month + "-" + date + " " + hour + ":" + minute;
     }
   };
 
@@ -290,19 +314,36 @@ class App extends React.Component {
 
             <Divider className={classes.divider}/>
 
-            <TextField
-              label="Deadline (Optional)"
-              type="datetime-local"
-              value={this.state.new_todo_deadline}
-              onChange={this.handleNewTodoDeadlineChange}
-              margin="dense"
-              variant="outlined"
-              fullWidth
-              InputLabelProps={{
-                shrink: true
-              }}
-            />
+            <Typography variant="caption" color="textSecondary">Deadline (Optional)</Typography>
 
+            <MuiPickersUtilsProvider utils={DateFnsUtils} locale={enLocale}>
+              <KeyboardDatePicker
+                label="Date"
+                format="MM/dd/yyyy"
+                placeholder="Please use date picker button"
+                value={this.state.new_todo_deadline}
+                onChange={(date) => this.handleNewTodoDeadlineChange(date)}
+                margin="dense"
+                fullWidth
+                InputLabelProps={{
+                  shrink: true
+                }}
+              />
+
+              <KeyboardTimePicker
+                label="Time"
+                format="HH:mm"
+                placeholder="Please use time picker button"
+                value={this.state.new_todo_deadline}
+                onChange={(date) => this.handleNewTodoDeadlineChange(date)}
+                margin="dense"
+                fullWidth
+                InputLabelProps={{
+                  shrink: true
+                }}
+              />
+            </MuiPickersUtilsProvider>
+            
             <div className={classes.space} />
 
             <Button
@@ -311,9 +352,9 @@ class App extends React.Component {
               size="small"
               fullWidth
               color="default"
-              disabled={this.state.new_todo_deadline === ""}
+              disabled={Boolean(this.state.new_todo_deadline) === false}
             >
-              {this.state.new_todo_deadline === "" ?
+              {Boolean(this.state.new_todo_deadline) === false ?
                 "Deadline not set" : "Clear Deadline"
               }
             </Button>
@@ -363,16 +404,37 @@ class App extends React.Component {
       </Dialog>
     );
 
+    const displayIcon = (item) => {
+      if(item.finished === true) {
+        return (<DoneIcon color="primary" />);
+      }
+      else if(item.deadline !== null && Date.now() > item.deadline) {
+        return (<WarningIcon color="secondary" />);
+      }
+      else {
+        return (<LabelIcon/>);
+      }
+    };
+
     const todoItems = this.state.todo_items.map((item) =>
-      <ListItem key={item.id} button className={classes.listItem}>
+      <ListItem
+        key={item.id}
+        button
+        className={classes.listItem}
+        disabled={item.finished === true}
+      >
         <ListItemIcon>
-          {(item.deadline !== null && Date.now() > item.deadline) ?
-            <WarningIcon color="secondary" /> : <LabelIcon />
-          }
+          {displayIcon(item)}
         </ListItemIcon>
         <ListItemText
           primary={item.title}
-          secondary={"Deadline: " + this.generateDateTimeString(item.deadline)}
+          secondary={
+            <Typography
+              variant="body2"
+              color={(item.finished === false && item.deadline !== null && Date.now() > item.deadline) ? "secondary" : "textSecondary"}>
+              {"Deadline: " + this.generateDateTimeString(item.deadline)}
+            </Typography>
+          }
         />
 
         <ListItemSecondaryAction>
