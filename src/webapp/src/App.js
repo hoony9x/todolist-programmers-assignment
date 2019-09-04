@@ -6,42 +6,23 @@ import {
   Container,
   AppBar, Toolbar,
   Typography,
-  ButtonGroup, Button, IconButton, Icon,
-  Drawer,
-  List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction,
+  ButtonGroup, Button, IconButton,
+  List, ListItem, ListItemText, ListItemSecondaryAction, ListItemIcon,
   Divider,
-  Hidden,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Badge,
   Paper,
   TextField,
-  Switch,
   Checkbox
 } from '@material-ui/core';
+
 import {
-  Menu as MenuIcon,
-  Home as HomeIcon,
-  Group as GroupIcon,
-  PlaylistAdd as PlaylistAddIcon,
-  Toc as TocIcon,
-  FormatListNumbered as FormatListNumberedIcon,
-  Settings as SettingsIcon,
-  SettingsOutlined as SettingsOutlinedIcon,
-  PeopleOutline as PeopleOutlineIcon,
-  Person as PersonIcon,
-  Notifications as NotificationsIcon,
-  NotificationsNone as NotificationsNoneIcon,
-  ReceiptOutlined as ReceiptOutlinedIcon,
   NoteAdd as NoteAddIcon,
-  Label as LabelIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  Warning as WarningIcon,
-  DoneOutline as DoneIcon
+  Delete as DeleteIcon
 } from '@material-ui/icons';
 
 import DateFnsUtils from '@date-io/date-fns';
-import enLocale from "date-fns/locale/en-US";
+import enLocale from 'date-fns/locale/en-US';
 import {
   MuiPickersUtilsProvider,
   KeyboardTimePicker,
@@ -82,7 +63,12 @@ const styles = (theme) => ({
     flexGrow: 1,
   },
   listItem: {
-    paddingLeft: theme.spacing(3)
+    [theme.breakpoints.down('xs')]: {
+      paddingLeft: theme.spacing(1)
+    },
+    [theme.breakpoints.up('sm')]: {
+      paddingLeft: theme.spacing(2)
+    }
   },
   divider: {
     marginTop: '11.5px',
@@ -115,6 +101,11 @@ const styles = (theme) => ({
   }
 });
 
+const server = axios.create({
+  baseURL: '/api',
+  timeout: 3000
+});
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -125,7 +116,7 @@ class App extends React.Component {
           id: 1,
           title: "Test title 1",
           content: "Test content 1",
-          deadline: (new Date()).toISOString(),
+          deadline: (new Date(235123532)).toISOString(),
           priority: 0,
           finished: false
         },
@@ -150,8 +141,26 @@ class App extends React.Component {
       new_todo_title: "",
       new_todo_content: "\n\n\n",
       new_todo_deadline: null,
-      new_todo_priority: 0
+      new_todo_priority: 0,
+      is_view_dialog_opened: false,
+      view_item: null,
+      is_edit_dialog_opened: false,
+      edit_todo_id: 0,
+      edit_todo_title: "",
+      edit_todo_content: "",
+      edit_todo_deadline: null,
+      edit_todo_priority: 0
     };
+  }
+
+  componentDidMount() {
+    (async () => {
+      try {
+
+      } catch(err) {
+        console.error(err);
+      }
+    })();
   }
 
   handleClickAddNewTodoIcon = (e) => {
@@ -212,13 +221,81 @@ class App extends React.Component {
   submitNewTodo = (e) => {
     e.preventDefault();
 
-    let datetime_iso_string;
-    if(Boolean(this.state.new_todo_deadline) === false) {
-      datetime_iso_string = "";
-    }
-    else {
-      datetime_iso_string = (new Date(datetime_iso_string)).toISOString();
-    }
+    const datetime_ISO_string = Boolean(this.state.new_todo_deadline) === true ? (new Date(this.state.new_todo_deadline)).toISOString() : null;
+  };
+
+  selectEditTodo = (item) => {
+    this.setState({
+      is_edit_dialog_opened: true,
+      edit_todo_id: item.id,
+      edit_todo_title: item.title,
+      edit_todo_content: item.content,
+      edit_todo_deadline: Boolean(item.deadline) === true ? new Date(item.deadline) : null,
+      edit_todo_priority: item.priority
+    });
+  };
+
+  // TODO: Must connect to API server
+  selectDeleteTodo = (item) => {
+
+  };
+
+  // TODO: Must connect to API server
+  selectTodoCheckBox = (item, checked) => {
+
+  };
+
+  // TODO: Must connect to API server
+  submitEditTodo = (e) => {
+    e.preventDefault();
+
+    const datetime_ISO_string = Boolean(this.state.edit_todo_deadline) === true ? (new Date(this.state.edit_todo_deadline)).toISOString() : null;
+  };
+
+  handleCloseEditTodoDialog = (e) => {
+    e.preventDefault();
+
+    this.setState({
+      is_edit_dialog_opened: false
+    });
+  };
+
+  handleEditTodoTitleChange = (e) => {
+    e.preventDefault();
+
+    this.setState({
+      edit_todo_title: e.target.value
+    });
+  };
+
+  handleEditTodoContentChange = (e) => {
+    e.preventDefault();
+
+    this.setState({
+      edit_todo_content: e.target.value
+    });
+  };
+
+  handleEditTodoDeadlineChange = (date) => {
+    this.setState({
+      edit_todo_deadline: date
+    });
+
+    console.log(date);
+  };
+
+  handleClickClearEditDeadline = (e) => {
+    e.preventDefault();
+
+    this.setState({
+      edit_todo_deadline: null
+    });
+  };
+
+  setEditPriorityValue = (priority_value) => {
+    this.setState({
+      edit_todo_priority: priority_value
+    });
   };
 
   generateDateTimeString = (date_string) => {
@@ -227,35 +304,20 @@ class App extends React.Component {
     }
     else {
       const dateObj = new Date(date_string);
+      const month_str = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-      const year = dateObj.getFullYear().toString();
-      let month = (parseInt(dateObj.getMonth(), 10) + 1).toString();
-      let date = dateObj.getDate().toString();
-      let hour = dateObj.getHours().toString();
-      let minute = dateObj.getMinutes().toString();
+      const year = (dateObj.getFullYear().toString()).slice(2);
+      const month = month_str[dateObj.getMonth() + 1];
+      const date = dateObj.getDate().toString();
+      const hour = dateObj.getHours().toString();
+      const minute = dateObj.getMinutes().toString();
 
-      if(month.length === 1) {
-        month = "0" + month;
-      }
-
-      if(date.length === 1) {
-        date = "0" + date;
-      }
-
-      if(hour.length === 1) {
-        hour = "0" + hour;
-      }
-
-      if(minute.length === 1) {
-        minute = "0" + minute;
-      }
-
-      return year + "-" + month + "-" + date + " " + hour + ":" + minute;
+      return date + " " + month + " " + year + ", " + hour + ":" + minute;
     }
   };
 
   render() {
-    const { classes, theme } = this.props;
+    const { classes } = this.props;
 
     const appBar = (
       <AppBar className={classes.appBar} color='inherit' position='static'>
@@ -275,7 +337,8 @@ class App extends React.Component {
       <Dialog
         onClose={this.handleCloseAddNewTodoDialog}
         open={this.state.is_add_dialog_opened}
-        fullWidth
+        fullWidth={window.innerWidth >= 600}
+        fullScreen={window.innerWidth < 600}
       >
         <form onSubmit={this.submitNewTodo} autoComplete="off">
           <DialogTitle>Add new TodoList item</DialogTitle>
@@ -320,7 +383,7 @@ class App extends React.Component {
               <KeyboardDatePicker
                 label="Date"
                 format="MM/dd/yyyy"
-                placeholder="Please use date picker button"
+                placeholder="Use button at right side"
                 value={this.state.new_todo_deadline}
                 onChange={(date) => this.handleNewTodoDeadlineChange(date)}
                 margin="dense"
@@ -333,7 +396,7 @@ class App extends React.Component {
               <KeyboardTimePicker
                 label="Time"
                 format="HH:mm"
-                placeholder="Please use time picker button"
+                placeholder="Use button at right side"
                 value={this.state.new_todo_deadline}
                 onChange={(date) => this.handleNewTodoDeadlineChange(date)}
                 margin="dense"
@@ -343,7 +406,7 @@ class App extends React.Component {
                 }}
               />
             </MuiPickersUtilsProvider>
-            
+
             <div className={classes.space} />
 
             <Button
@@ -404,17 +467,138 @@ class App extends React.Component {
       </Dialog>
     );
 
-    const displayIcon = (item) => {
-      if(item.finished === true) {
-        return (<DoneIcon color="primary" />);
-      }
-      else if(item.deadline !== null && Date.now() > item.deadline) {
-        return (<WarningIcon color="secondary" />);
-      }
-      else {
-        return (<LabelIcon/>);
-      }
-    };
+    const editTodoDialog = (
+      <Dialog
+        onClose={this.handleCloseEditTodoDialog}
+        open={this.state.is_edit_dialog_opened}
+        fullWidth
+      >
+        <form autoComplete="off">
+          <DialogTitle>Edit TodoList item</DialogTitle>
+
+          <Divider/>
+
+          <DialogContent>
+            <TextField
+              label="Title"
+              type="text"
+              value={this.state.edit_todo_title}
+              onChange={this.handleEditTodoTitleChange}
+              margin="dense"
+              variant="outlined"
+              fullWidth
+              required
+              InputLabelProps={{
+                shrink: true
+              }}
+            />
+
+            <TextField
+              label="Content"
+              type="text"
+              value={this.state.edit_todo_content}
+              onChange={this.handleEditTodoContentChange}
+              margin="dense"
+              variant="outlined"
+              multiline
+              fullWidth
+              rowsMax="4"
+              InputLabelProps={{
+                shrink: true
+              }}
+            />
+
+            <Divider className={classes.divider}/>
+
+            <Typography variant="caption" color="textSecondary">Deadline (Optional)</Typography>
+
+            <MuiPickersUtilsProvider utils={DateFnsUtils} locale={enLocale}>
+              <KeyboardDatePicker
+                label="Date"
+                format="MM/dd/yyyy"
+                placeholder="Please use date picker button"
+                value={this.state.edit_todo_deadline}
+                onChange={this.handleEditTodoDeadlineChange}
+                margin="dense"
+                fullWidth
+                InputLabelProps={{
+                  shrink: true
+                }}
+              />
+
+              <KeyboardTimePicker
+                label="Time"
+                format="HH:mm"
+                placeholder="Please use time picker button"
+                value={this.state.edit_todo_deadline}
+                onChange={this.handleEditTodoDeadlineChange}
+                margin="dense"
+                fullWidth
+                InputLabelProps={{
+                  shrink: true
+                }}
+              />
+            </MuiPickersUtilsProvider>
+
+            <div className={classes.space} />
+
+            <Button
+              onClick={this.handleClickClearEditDeadline}
+              variant="contained"
+              size="small"
+              fullWidth
+              color="default"
+              disabled={Boolean(this.state.edit_todo_deadline) === false}
+            >
+              {Boolean(this.state.edit_todo_deadline) === false ?
+                "Deadline not set" : "Clear Deadline"
+              }
+            </Button>
+
+            <Divider className={classes.divider}/>
+
+            <Typography variant="caption" color="textSecondary">Priority</Typography>
+            <ButtonGroup
+              size="small"
+              variant="contained"
+              fullWidth
+            >
+              <Button
+                onClick={() => this.setEditPriorityValue(0)}
+                color={this.state.edit_todo_priority === 0 ? "primary": "default"}
+              >
+                Low
+              </Button>
+              <Button
+                onClick={() => this.setEditPriorityValue(1)}
+                color={this.state.edit_todo_priority === 1 ? "primary": "default"}
+              >
+                Mid
+              </Button>
+              <Button
+                onClick={() => this.setEditPriorityValue(2)}
+                color={this.state.edit_todo_priority === 2 ? "primary": "default"}
+              >
+                High
+              </Button>
+            </ButtonGroup>
+
+            <div className={classes.space} />
+          </DialogContent>
+
+          <Divider/>
+
+          <DialogActions>
+            <Button type="button" onClick={this.handleCloseEditTodoDialog} variant="outlined" color="secondary">
+              Cancel
+            </Button>
+            <Button type="submit" variant="outlined" color="primary">
+              Update
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    );
 
     const todoItems = this.state.todo_items.map((item) =>
       <ListItem
@@ -424,30 +608,38 @@ class App extends React.Component {
         disabled={item.finished === true}
       >
         <ListItemIcon>
-          {displayIcon(item)}
+          <Checkbox
+            onChange={(e) => this.selectTodoCheckBox(item, e.target.checked)}
+            checked={item.finished}
+            color="primary"
+          />
         </ListItemIcon>
+
         <ListItemText
-          primary={item.title}
+          primary={(
+            <Typography
+              variant="subtitle2"
+              color={(item.finished === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}
+            >
+              {item.title}
+            </Typography>
+          )}
           secondary={
             <Typography
               variant="body2"
-              color={(item.finished === false && item.deadline !== null && Date.now() > item.deadline) ? "secondary" : "textSecondary"}>
-              {"Deadline: " + this.generateDateTimeString(item.deadline)}
+              color={(item.finished === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}>
+              <span role="img" aria-label="clock">&#128337;</span>{this.generateDateTimeString(item.deadline)}
             </Typography>
           }
         />
 
         <ListItemSecondaryAction>
-          <IconButton edge="end">
-            <DeleteIcon />
-          </IconButton>
-          <IconButton edge="end">
+          <IconButton onClick={(e) => this.selectEditTodo(item)} edge="end">
             <EditIcon />
           </IconButton>
-          <Checkbox
-            checked={item.finished}
-            color="primary"
-          />
+          <IconButton onClick={(e) => this.selectDeleteTodo(item)} edge="end">
+            <DeleteIcon />
+          </IconButton>
         </ListItemSecondaryAction>
       </ListItem>
     );
@@ -469,6 +661,7 @@ class App extends React.Component {
         </main>
 
         {addNewTodoDialog}
+        {editTodoDialog}
       </div>
     );
   }
