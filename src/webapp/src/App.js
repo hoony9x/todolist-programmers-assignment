@@ -106,6 +106,17 @@ const server = axios.create({
   timeout: 3000
 });
 
+const axiosErrorDisplay = (err) => {
+  console.error(err);
+
+  if(err.response !== undefined) {
+    alert(err.response.data['message']);
+  }
+  else {
+    alert("Unable to get response from server!");
+  }
+};
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -118,7 +129,7 @@ class App extends React.Component {
           content: "Test content 1",
           deadline: (new Date(235123532)).toISOString(),
           priority: 0,
-          finished: false
+          is_finished: false
         },
         {
           id: 2,
@@ -126,7 +137,7 @@ class App extends React.Component {
           content: "Test content 2",
           deadline: null,
           priority: 0,
-          finished: false
+          is_finished: false
         },
         {
           id: 3,
@@ -134,7 +145,7 @@ class App extends React.Component {
           content: "Test content 3",
           deadline: (new Date()).toISOString(),
           priority: 0,
-          finished: true
+          is_finished: true
         }
       ],
       is_add_dialog_opened: false,
@@ -154,13 +165,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    (async () => {
-      try {
-
-      } catch(err) {
-        console.error(err);
-      }
-    })();
+    this.getAllTodos();
   }
 
   handleClickAddNewTodoIcon = (e) => {
@@ -199,8 +204,6 @@ class App extends React.Component {
     this.setState({
       new_todo_deadline: date
     });
-
-    console.log(date);
   };
 
   handleClickClearNewDeadline = (e) => {
@@ -217,11 +220,43 @@ class App extends React.Component {
     });
   };
 
+  getAllTodos = async() => {
+    let todos = null;
+    try {
+      todos = (await server.get('/todo')).data;
+      this.setState({
+        todo_items: todos
+      });
+    } catch(err) {
+      axiosErrorDisplay(err);
+    }
+  };
+
   // TODO: Must connect to API server
-  submitNewTodo = (e) => {
+  submitNewTodo = async (e) => {
     e.preventDefault();
 
     const datetime_ISO_string = Boolean(this.state.new_todo_deadline) === true ? (new Date(this.state.new_todo_deadline)).toISOString() : null;
+    try {
+      await server.post('/todo', {
+        title: this.state.new_todo_title,
+        content: this.state.new_todo_content,
+        deadline: datetime_ISO_string,
+        priority: this.state.new_todo_priority
+      });
+
+      this.setState({
+        is_add_dialog_opened: false,
+        new_todo_title: "",
+        new_todo_content: "\n\n\n",
+        new_todo_deadline: null,
+        new_todo_priority: 0,
+      });
+
+      this.getAllTodos();
+    } catch(err) {
+      axiosErrorDisplay(err);
+    }
   };
 
   selectEditTodo = (item) => {
@@ -236,20 +271,59 @@ class App extends React.Component {
   };
 
   // TODO: Must connect to API server
-  selectDeleteTodo = (item) => {
+  selectDeleteTodo = async (item) => {
+    try {
+      await server.delete('/todo/' + item.id);
 
+      this.getAllTodos();
+    } catch(err) {
+      axiosErrorDisplay(err);
+    }
   };
 
   // TODO: Must connect to API server
-  selectTodoCheckBox = (item, checked) => {
+  selectTodoCheckBox = async (item, checked) => {
+    const datetime_ISO_string = Boolean(item.deadline) === true ? (new Date(item.deadline)).toISOString() : null;
+    try {
+      await server.put('/todo/' + item.id, {
+        title: item.title,
+        content: item.content,
+        deadline: datetime_ISO_string,
+        priority: item.priority,
+        is_finished: checked
+      });
 
+      this.getAllTodos();
+    } catch(err) {
+      axiosErrorDisplay(err);
+    }
   };
 
   // TODO: Must connect to API server
-  submitEditTodo = (e) => {
+  submitEditTodo = async (e) => {
     e.preventDefault();
 
     const datetime_ISO_string = Boolean(this.state.edit_todo_deadline) === true ? (new Date(this.state.edit_todo_deadline)).toISOString() : null;
+    try {
+      await server.put('/todo/' + this.state.edit_todo_id, {
+        title: this.state.edit_todo_title,
+        content: this.state.edit_todo_content,
+        deadline: datetime_ISO_string,
+        priority: this.state.edit_todo_priority
+      });
+
+      this.setState({
+        is_edit_dialog_opened: false,
+        edit_todo_title: "",
+        edit_todo_content: "",
+        edit_todo_deadline: null,
+        edit_todo_priority: 0,
+      });
+
+      this.getAllTodos();
+    } catch(err) {
+      axiosErrorDisplay(err);
+    }
   };
 
   handleCloseEditTodoDialog = (e) => {
@@ -280,8 +354,6 @@ class App extends React.Component {
     this.setState({
       edit_todo_deadline: date
     });
-
-    console.log(date);
   };
 
   handleClickClearEditDeadline = (e) => {
@@ -471,9 +543,10 @@ class App extends React.Component {
       <Dialog
         onClose={this.handleCloseEditTodoDialog}
         open={this.state.is_edit_dialog_opened}
-        fullWidth
+        fullWidth={window.innerWidth >= 600}
+        fullScreen={window.innerWidth < 600}
       >
-        <form autoComplete="off">
+        <form onSubmit={this.submitEditTodo} autoComplete="off">
           <DialogTitle>Edit TodoList item</DialogTitle>
 
           <Divider/>
@@ -605,12 +678,11 @@ class App extends React.Component {
         key={item.id}
         button
         className={classes.listItem}
-        disabled={item.finished === true}
       >
         <ListItemIcon>
           <Checkbox
             onChange={(e) => this.selectTodoCheckBox(item, e.target.checked)}
-            checked={item.finished}
+            checked={Boolean(item.is_finished)}
             color="primary"
           />
         </ListItemIcon>
@@ -619,7 +691,7 @@ class App extends React.Component {
           primary={(
             <Typography
               variant="subtitle2"
-              color={(item.finished === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}
+              color={(Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}
             >
               {item.title}
             </Typography>
@@ -627,7 +699,7 @@ class App extends React.Component {
           secondary={
             <Typography
               variant="body2"
-              color={(item.finished === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}>
+              color={(Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}>
               <span role="img" aria-label="clock">&#128337;</span>{this.generateDateTimeString(item.deadline)}
             </Typography>
           }

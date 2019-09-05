@@ -1,2 +1,2 @@
 web: npm start
-migrate: ./node_modules/.bin/sequelize db:migrate
+migrate: node src/database_setup.js

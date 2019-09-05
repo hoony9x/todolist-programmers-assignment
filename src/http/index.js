@@ -7,6 +7,8 @@ const helmet = require('helmet');
 const http = require('http');
 const path = require('path');
 
+const http_api = require('./api');
+
 const app = asyncify(express());
 
 if(process.env.NODE_ENV !== 'production') {
@@ -17,9 +19,10 @@ if(process.env.NODE_ENV !== 'production') {
 app.enable('trust proxy');
 app.use(helmet());
 
-// TODO: Create API
+app.use('/api', http_api);
 
-if(process.env.NODE_ENV !== 'production') {
+/* This code is serving React web application static files. */
+if(process.env.NODE_ENV !== 'production') { /* NODE_ENV === "development" */
   const httpProxy = require('http-proxy');
   const proxy = httpProxy.createProxyServer({ ws: true });
 
@@ -27,7 +30,7 @@ if(process.env.NODE_ENV !== 'production') {
     proxy.web(req, res, { target: 'http://localhost:3000' });
   });
 }
-else {
+else { /* NODE_ENV === "production" */
   /* Serve static files */
   app.use(express.static(path.join(__dirname, '../', 'webapp', 'build')));
 
