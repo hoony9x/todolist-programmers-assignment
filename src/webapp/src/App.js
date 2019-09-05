@@ -19,8 +19,7 @@ import {
 import {
   NoteAdd as NoteAddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  Warning as WarningIcon
+  Delete as DeleteIcon
 } from '@material-ui/icons';
 
 import DateFnsUtils from '@date-io/date-fns';
@@ -143,7 +142,7 @@ class App extends React.Component {
       ],
       is_add_dialog_opened: false,
       new_todo_title: "",
-      new_todo_content: "\n\n\n",
+      new_todo_content: "",
       new_todo_deadline: null,
       new_todo_priority: 0,
       is_edit_dialog_opened: false,
@@ -256,7 +255,7 @@ class App extends React.Component {
       this.setState({
         is_add_dialog_opened: false,
         new_todo_title: "",
-        new_todo_content: "\n\n\n",
+        new_todo_content: "",
         new_todo_deadline: null,
         new_todo_priority: 0,
       });
@@ -395,7 +394,7 @@ class App extends React.Component {
   };
 
   displayPriorityString = (item) => {
-    const priority_str = ['Low', 'Mid', 'High'];
+    const priority_str = ['Low', 'Medium', 'High'];
 
     return priority_str[item.priority] + " Priority";
   };
@@ -413,6 +412,11 @@ class App extends React.Component {
     else {
       alert("Unable to get response from server!");
     }
+  };
+
+  selectPriorityColorChip = (item) => {
+    const color_str = ['default', 'primary', 'secondary'];
+    return color_str[item.priority];
   };
 
   render() {
@@ -464,11 +468,12 @@ class App extends React.Component {
               type="text"
               value={this.state.new_todo_content}
               onChange={this.handleNewTodoContentChange}
+              rows="4"
               margin="dense"
               variant="outlined"
               multiline
               fullWidth
-              rowsMax="4"
+              rowsMax="7"
               InputLabelProps={{
                 shrink: true
               }}
@@ -539,7 +544,7 @@ class App extends React.Component {
                 onClick={() => this.setNewPriorityValue(1)}
                 color={this.state.new_todo_priority === 1 ? "primary": "default"}
               >
-                Mid
+                Medium
               </Button>
               <Button
                 onClick={() => this.setNewPriorityValue(2)}
@@ -598,11 +603,12 @@ class App extends React.Component {
               type="text"
               value={this.state.edit_todo_content}
               onChange={this.handleEditTodoContentChange}
+              rows="4"
               margin="dense"
               variant="outlined"
               multiline
               fullWidth
-              rowsMax="4"
+              rowsMax="7"
               InputLabelProps={{
                 shrink: true
               }}
@@ -673,7 +679,7 @@ class App extends React.Component {
                 onClick={() => this.setEditPriorityValue(1)}
                 color={this.state.edit_todo_priority === 1 ? "primary": "default"}
               >
-                Mid
+                Medium
               </Button>
               <Button
                 onClick={() => this.setEditPriorityValue(2)}
@@ -706,20 +712,36 @@ class App extends React.Component {
           <Typography color="textSecondary" gutterBottom>
             {item.title}
           </Typography>
-          <Typography variant="body2" component="p">
-            {item.content}
-          </Typography>
+          {Boolean(item.content) &&
+            <Typography variant="body2">
+              {
+                (item.content).split('\n').map((line) => {
+                  return (<span>{line}<br/></span>);
+                })
+              }
+            </Typography>
+          }
           <Typography
             variant="overline"
-            color={this.checkDeadlinePassed(item) ? "secondary" : "textSecondary"}
-            component="p"
+            color={this.checkDeadlinePassed(item) ? "error" : "textSecondary"}
           >
             <span role="img" aria-label="clock">&#128337;</span>{this.generateDateTimeString(item.deadline)}
           </Typography>
-          <Typography
-            component="p"
-          >
-            <Chip label={this.displayPriorityString(item)} size="small" variant="outlined" />
+          <Typography component="div">
+            {!Boolean(item.is_finished) &&
+              <Chip
+                label={this.displayPriorityString(item)}
+                size="small"
+                variant="outlined"
+                color={this.selectPriorityColorChip(item)}
+              />
+            }
+            {this.checkDeadlinePassed(item) &&
+              <React.Fragment>
+                &nbsp;
+                <Chip color="secondary" label="Deadline Exceeded" size="small" variant="default" />
+              </React.Fragment>
+            }
           </Typography>
         </CardContent>
 
@@ -737,11 +759,6 @@ class App extends React.Component {
           <IconButton size="small" onClick={(e) => this.selectDeleteTodo(item)} edge="end">
             <DeleteIcon />
           </IconButton>
-          {this.checkDeadlinePassed(item) &&
-            <IconButton color="secondary">
-              <WarningIcon/>
-            </IconButton>
-          }
         </CardActions>
       </Card>
     );
