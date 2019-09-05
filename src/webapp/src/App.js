@@ -65,14 +65,6 @@ const styles = (theme) => ({
   title: {
     flexGrow: 1,
   },
-  listItem: {
-    [theme.breakpoints.down('xs')]: {
-      paddingLeft: theme.spacing(1)
-    },
-    [theme.breakpoints.up('sm')]: {
-      paddingLeft: theme.spacing(2)
-    }
-  },
   divider: {
     marginTop: '11.5px',
     marginBottom: '11.5px',
@@ -220,10 +212,10 @@ class App extends React.Component {
 
     for(const todo of todos) {
       if(Boolean(todo.deadline)) {
-        todo['deadline_unixtime'] = (new Date(todo.deadline)).getTime();
+        todo.deadline_unixtime = (new Date(todo.deadline)).getTime();
       }
       else {
-        todo['deadline_unixtime'] = null;
+        todo.deadline_unixtime = null;
       }
     }
 
@@ -715,8 +707,8 @@ class App extends React.Component {
           {Boolean(item.content) &&
             <Typography variant="body2">
               {
-                (item.content).split('\n').map((line) => {
-                  return (<span>{line}<br/></span>);
+                (item.content).split('\n').map((line, idx) => {
+                  return (<span key={idx}>{line}<br/></span>);
                 })
               }
             </Typography>
