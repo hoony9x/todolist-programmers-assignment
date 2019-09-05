@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "This project is web application for 2nd assignment from \"Silicon Valley Job Fair 2019 \".",
   "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "cd src/webapp && npm run build && cd ../../ && node src/index.js",
+    "start-dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node src/index.js",
     "client": "cd ./src/webapp && npm install && if test \"$NODE_ENV\" = \"production\" ; then npm run build ; else BROWSER=none PORT=3000 npm start ; fi "
   },
