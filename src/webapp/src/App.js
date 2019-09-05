@@ -272,12 +272,13 @@ class App extends React.Component {
 
   // TODO: Must connect to API server
   selectDeleteTodo = async (item) => {
-    try {
-      await server.delete('/todo/' + item.id);
-
-      this.getAllTodos();
-    } catch(err) {
-      axiosErrorDisplay(err);
+    if(window.confirm("Do you want delete it?")) {
+      try {
+        await server.delete('/todo/' + item.id);
+        this.getAllTodos();
+      } catch(err) {
+        axiosErrorDisplay(err);
+      }
     }
   };
 
@@ -379,7 +380,7 @@ class App extends React.Component {
       const month_str = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
       const year = (dateObj.getFullYear().toString()).slice(2);
-      const month = month_str[dateObj.getMonth() + 1];
+      const month = month_str[dateObj.getMonth()];
       const date = dateObj.getDate().toString();
       const hour = dateObj.getHours().toString();
       const minute = dateObj.getMinutes().toString();
