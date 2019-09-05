@@ -7,18 +7,20 @@ import {
   AppBar, Toolbar,
   Typography,
   ButtonGroup, Button, IconButton,
-  List, ListItem, ListItemText, ListItemSecondaryAction, ListItemIcon,
   Divider,
   Dialog, DialogTitle, DialogContent, DialogActions,
   Paper,
   TextField,
-  Checkbox
+  Checkbox,
+  Card, CardActions, CardContent,
+  Chip
 } from '@material-ui/core';
 
 import {
   NoteAdd as NoteAddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Warning as WarningIcon
 } from '@material-ui/icons';
 
 import DateFnsUtils from '@date-io/date-fns';
@@ -100,6 +102,20 @@ const styles = (theme) => ({
       minHeight: window.innerHeight - (2 * theme.spacing(2))
     },
     backgroundColor: theme.palette.background.default
+  },
+  card: {
+    [theme.breakpoints.down('xs')]: {
+      margin: theme.spacing(1)
+    },
+    [theme.breakpoints.up('sm')]: {
+      margin: theme.spacing(2)
+    }
+  },
+  cardContent: {
+    padding: theme.spacing(1.5)
+  },
+  cardAction: {
+    padding: 0
   }
 });
 
@@ -108,40 +124,28 @@ const server = axios.create({
   timeout: 3000
 });
 
-const axiosErrorDisplay = (err) => {
-  console.error(err);
-
-  if(err.response !== undefined) {
-    alert(err.response.data['message']);
-  }
-  else {
-    alert("Unable to get response from server!");
-  }
-};
-
 class App extends React.Component {
   constructor(props) {
     super(props);
 
-    /*
-     {
-       id: 0,
-       title: "Test title",
-       content: "Test content ",
-       deadline: (new Date()).toISOString(),
-       priority: 0,
-       is_finished: false
-     }
-     */
     this.state = {
-      todo_items: [],
+      todo_items: [
+        /*
+          {
+            id: INTEGER,
+            title: STRING,
+            content: TEXT,
+            deadline: DATETIME,
+            priority: 0 or 1 or 2,
+            is_finished: BOOLEAN
+          }
+        */
+      ],
       is_add_dialog_opened: false,
       new_todo_title: "",
       new_todo_content: "\n\n\n",
       new_todo_deadline: null,
       new_todo_priority: 0,
-      is_view_dialog_opened: false,
-      view_item: null,
       is_edit_dialog_opened: false,
       edit_todo_id: 0,
       edit_todo_title: "",
@@ -212,7 +216,7 @@ class App extends React.Component {
     try {
       todos = (await server.get('/todo')).data;
     } catch(err) {
-      axiosErrorDisplay(err);
+      this.axiosErrorDisplay(err);
     }
 
     for(const todo of todos) {
@@ -259,7 +263,7 @@ class App extends React.Component {
 
       this.getAllTodos();
     } catch(err) {
-      axiosErrorDisplay(err);
+      this.axiosErrorDisplay(err);
     }
   };
 
@@ -275,12 +279,12 @@ class App extends React.Component {
   };
 
   selectDeleteTodo = async (item) => {
-    if(window.confirm("Do you want delete it?")) {
+    if(window.confirm("Do you want delete \"" + item.title + "\"?")) {
       try {
         await server.delete('/todo/' + item.id);
         this.getAllTodos();
       } catch(err) {
-        axiosErrorDisplay(err);
+        this.axiosErrorDisplay(err);
       }
     }
   };
@@ -298,7 +302,7 @@ class App extends React.Component {
 
       this.getAllTodos();
     } catch(err) {
-      axiosErrorDisplay(err);
+      this.axiosErrorDisplay(err);
     }
   };
 
@@ -324,7 +328,7 @@ class App extends React.Component {
 
       this.getAllTodos();
     } catch(err) {
-      axiosErrorDisplay(err);
+      this.axiosErrorDisplay(err);
     }
   };
 
@@ -387,6 +391,27 @@ class App extends React.Component {
       const minute = dateObj.getMinutes().toString();
 
       return date + " " + month + " " + year + ", " + hour + ":" + minute;
+    }
+  };
+
+  displayPriorityString = (item) => {
+    const priority_str = ['Low', 'Mid', 'High'];
+
+    return priority_str[item.priority] + " Priority";
+  };
+
+  checkDeadlinePassed = (item) => {
+    return (Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline));
+  };
+
+  axiosErrorDisplay = (err) => {
+    console.error(err);
+
+    if(err.response !== undefined) {
+      alert(err.response.data['message']);
+    }
+    else {
+      alert("Unable to get response from server!");
     }
   };
 
@@ -675,47 +700,50 @@ class App extends React.Component {
       </Dialog>
     );
 
-    const todoItems = this.state.todo_items.map((item) =>
-      <ListItem
-        key={item.id}
-        button
-        className={classes.listItem}
-      >
-        <ListItemIcon>
+    const todoItemCards = this.state.todo_items.map((item) =>
+      <Card key={item.id} className={classes.card} raised>
+        <CardContent className={classes.cardContent}>
+          <Typography color="textSecondary" gutterBottom>
+            {item.title}
+          </Typography>
+          <Typography variant="body2" component="p">
+            {item.content}
+          </Typography>
+          <Typography
+            variant="overline"
+            color={this.checkDeadlinePassed(item) ? "secondary" : "textSecondary"}
+            component="p"
+          >
+            <span role="img" aria-label="clock">&#128337;</span>{this.generateDateTimeString(item.deadline)}
+          </Typography>
+          <Typography
+            component="p"
+          >
+            <Chip label={this.displayPriorityString(item)} size="small" variant="outlined" />
+          </Typography>
+        </CardContent>
+
+        <Divider/>
+
+        <CardActions className={classes.cardAction}>
           <Checkbox
             onChange={(e) => this.selectTodoCheckBox(item, e.target.checked)}
             checked={Boolean(item.is_finished)}
             color="primary"
           />
-        </ListItemIcon>
-
-        <ListItemText
-          primary={(
-            <Typography
-              variant="subtitle2"
-              color={(Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}
-            >
-              {item.title}
-            </Typography>
-          )}
-          secondary={
-            <Typography
-              variant="body2"
-              color={(Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline)) ? "secondary" : "textSecondary"}>
-              <span role="img" aria-label="clock">&#128337;</span>{this.generateDateTimeString(item.deadline)}
-            </Typography>
-          }
-        />
-
-        <ListItemSecondaryAction>
-          <IconButton onClick={(e) => this.selectEditTodo(item)} edge="end">
+          <IconButton size="small" onClick={(e) => this.selectEditTodo(item)} edge="end">
             <EditIcon />
           </IconButton>
-          <IconButton onClick={(e) => this.selectDeleteTodo(item)} edge="end">
+          <IconButton size="small" onClick={(e) => this.selectDeleteTodo(item)} edge="end">
             <DeleteIcon />
           </IconButton>
-        </ListItemSecondaryAction>
-      </ListItem>
+          {this.checkDeadlinePassed(item) &&
+            <IconButton color="secondary">
+              <WarningIcon/>
+            </IconButton>
+          }
+        </CardActions>
+      </Card>
     );
 
     return (
@@ -726,10 +754,7 @@ class App extends React.Component {
           <Container className={classes.container} maxWidth='sm'>
             <Paper className={classes.paper}>
               {appBar}
-
-              <List component="nav">
-                {todoItems}
-              </List>
+              {todoItemCards}
             </Paper>
           </Container>
         </main>
