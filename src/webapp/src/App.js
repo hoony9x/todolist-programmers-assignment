@@ -29,6 +29,8 @@ import {
   KeyboardDatePicker,
 } from '@material-ui/pickers';
 
+import _ from 'lodash';
+
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
@@ -121,33 +123,18 @@ class App extends React.Component {
   constructor(props) {
     super(props);
 
+    /*
+     {
+       id: 0,
+       title: "Test title",
+       content: "Test content ",
+       deadline: (new Date()).toISOString(),
+       priority: 0,
+       is_finished: false
+     }
+     */
     this.state = {
-      todo_items: [
-        {
-          id: 1,
-          title: "Test title 1",
-          content: "Test content 1",
-          deadline: (new Date(235123532)).toISOString(),
-          priority: 0,
-          is_finished: false
-        },
-        {
-          id: 2,
-          title: "Test title 2",
-          content: "Test content 2",
-          deadline: null,
-          priority: 0,
-          is_finished: false
-        },
-        {
-          id: 3,
-          title: "Test title 3",
-          content: "Test content 3",
-          deadline: (new Date()).toISOString(),
-          priority: 0,
-          is_finished: true
-        }
-      ],
+      todo_items: [],
       is_add_dialog_opened: false,
       new_todo_title: "",
       new_todo_content: "\n\n\n",
@@ -221,18 +208,35 @@ class App extends React.Component {
   };
 
   getAllTodos = async() => {
-    let todos = null;
+    let todos = [];
     try {
       todos = (await server.get('/todo')).data;
-      this.setState({
-        todo_items: todos
-      });
     } catch(err) {
       axiosErrorDisplay(err);
     }
+
+    for(const todo of todos) {
+      if(Boolean(todo.deadline)) {
+        todo['deadline_unixtime'] = (new Date(todo.deadline)).getTime();
+      }
+      else {
+        todo['deadline_unixtime'] = null;
+      }
+    }
+
+    /* Use 'lodash' sortBy() because it needs stable sort.
+     * This method uses stable sort.
+     */
+    todos = _.sortBy(todos, [(todo) => todo.id]);
+    todos = _.sortBy(todos, [(todo) => -(todo.priority)]);
+    todos = _.sortBy(todos, [(todo) => todo.deadline_unixtime]);
+    todos = _.sortBy(todos, [(todo) => todo.is_finished]);
+
+    this.setState({
+      todo_items: todos
+    });
   };
 
-  // TODO: Must connect to API server
   submitNewTodo = async (e) => {
     e.preventDefault();
 
@@ -270,7 +274,6 @@ class App extends React.Component {
     });
   };
 
-  // TODO: Must connect to API server
   selectDeleteTodo = async (item) => {
     if(window.confirm("Do you want delete it?")) {
       try {
@@ -282,7 +285,6 @@ class App extends React.Component {
     }
   };
 
-  // TODO: Must connect to API server
   selectTodoCheckBox = async (item, checked) => {
     const datetime_ISO_string = Boolean(item.deadline) === true ? (new Date(item.deadline)).toISOString() : null;
     try {
@@ -300,7 +302,6 @@ class App extends React.Component {
     }
   };
 
-  // TODO: Must connect to API server
   submitEditTodo = async (e) => {
     e.preventDefault();
 
