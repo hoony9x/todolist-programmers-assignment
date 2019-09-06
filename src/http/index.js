@@ -20,7 +20,7 @@ if(process.env.NODE_ENV !== 'production') {
 }
 
 /* Basic security & other settings */
-api_app.enable('trust proxy');
+app.enable('trust proxy');
 app.enable('x-powered-by');
 app.use(helmet());
 
