@@ -2,6 +2,10 @@
 
 This project is web application for 2nd assignment from ["Silicon Valley Job Fair 2019"](https://programmers.co.kr/competitions/104/siliconvalley-jobfair2019).
 
+## For Programmers auto build process
+**Please wait until "Now starting http server on port 5000." message is showing up.**  
+Before this message is showing up, server is not launched yet.
+
 
 #### Environment variables for MySQL database
 Before start, please create mysql dateabase first.  
