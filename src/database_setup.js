@@ -1,9 +1,12 @@
 "use strict";
 
+/* Get library */
 const mysql = require('mysql2/promise');
 
+/* Below codes are wrapped into async function to use async/await keyword */
 (async() => {
   try {
+    /* Database connection (Based on Programmers runtime environment) */
     const db_connection = await mysql.createConnection({
       host: process.env.MYSQL_ROOT_HOST || "mysql-server",
       database: process.env.MYSQL_DATABASE || "my_database",
@@ -11,7 +14,7 @@ const mysql = require('mysql2/promise');
       password: process.env.MYSQL_ROOT_PASSWORD || "password"
     });
 
-    // Create `todos` table
+    /* Query for `todos` table creation */
     const todos_create_query = "CREATE TABLE IF NOT EXISTS `todos` (\n" +
       "  `id` int(11) NOT NULL AUTO_INCREMENT,\n" +
       "  `title` varchar(127) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
@@ -27,6 +30,7 @@ const mysql = require('mysql2/promise');
       "  KEY `is_finished` (`is_finished`)\n" +
       ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
+    /* Create `todos` table. */
     await db_connection.query(todos_create_query);
 
     db_connection.end();

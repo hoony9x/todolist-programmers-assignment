@@ -1,9 +1,11 @@
 "use strict";
 
+/* Ge library */
 const express = require('express');
 const asyncify = require('express-asyncify');
 const createError = require('http-errors');
 
+/* Create ExpressJS router object with async/await error-handling support */
 const router = asyncify(express.Router());
 
 /* Get all items (include finished) */
@@ -24,15 +26,21 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   const body = req.body || {};
 
+  /* check if 'title' is empty */
   const title = body['title'];
   if(Boolean(title) === false) {
     throw createError(400, "Required value 'title' is empty!");
   }
+  else if(title.length >= 128) { /* and check length of 'title' */
+    throw createError(400, "Length of 'title' must be smaller than 128");
+  }
 
   const content = body['content'] || "";
+
+  /* Check if 'priority' is integer and 0, 1, or 2 */
   const priority = parseInt(body['priority']);
   if(isNaN(priority) || priority < 0 || priority > 2) {
-    throw createError(400, "Required value 'priority' is must be 'low(0)', 'mid(1)', or 'high(2)'!");
+    throw createError(400, "Required value 'priority' is must be 'low(0)', 'medium(1)', or 'high(2)'!");
   }
 
   const deadline = (Boolean(body['deadline']) === true) ? new Date(body['deadline']) : null;
@@ -61,15 +69,21 @@ router.put('/:todo_id', async (req, res, next) => {
 
   const body = req.body || {};
 
+  /* check if 'title' is empty */
   const title = body['title'];
   if(Boolean(title) === false) {
     throw createError(400, "Required value 'title' is empty!");
   }
+  else if(title.length >= 128) { /* and check length of 'title' */
+    throw createError(400, "Length of 'title' must be smaller than 128");
+  }
 
   const content = body['content'] || "";
+
+  /* Check if 'priority' is integer and 0, 1, or 2 */
   const priority = parseInt(body['priority']);
   if(isNaN(priority) || priority < 0 || priority > 2) {
-    throw createError(400, "Required value 'priority' is must be 'low(0)', 'mid(1)', or 'high(2)'!");
+    throw createError(400, "Required value 'priority' is must be 'low(0)', 'medium(1)', or 'high(2)'!");
   }
 
   const deadline = (Boolean(body['deadline']) === true) ? new Date(body['deadline']) : null;
@@ -77,10 +91,10 @@ router.put('/:todo_id', async (req, res, next) => {
 
   req.db_connection = await req.db_pool.getConnection();
 
+  /* Check 'todo_id' exists */
   const todo_exists_chk_query = "SELECT * FROM `todos` WHERE `id` = ?";
   const todo_exists_chk_val = [todo_id];
   const [chk_rows, chk_fields] = await req.db_connection.execute(todo_exists_chk_query, todo_exists_chk_val);
-
   if(chk_rows.length === 0) {
     throw createError(400, "Requested 'todo` does not exists!");
   }
@@ -106,10 +120,10 @@ router.delete('/:todo_id', async (req, res, next) => {
 
   req.db_connection = await req.db_pool.getConnection();
 
+  /* Check 'todo_id' exists */
   const todo_exists_chk_query = "SELECT * FROM `todos` WHERE `id` = ?";
   const todo_exists_chk_val = [todo_id];
   const [chk_rows, chk_fields] = await req.db_connection.execute(todo_exists_chk_query, todo_exists_chk_val);
-
   if(chk_rows.length === 0) {
     throw createError(400, "Requested 'todo` does not exists!");
   }
@@ -124,4 +138,5 @@ router.delete('/:todo_id', async (req, res, next) => {
   });
 });
 
+/* Export ExpressJS router object */
 module.exports = router;

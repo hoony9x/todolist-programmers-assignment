@@ -142,12 +142,22 @@ class App extends React.Component {
       edit_todo_title: "",
       edit_todo_content: "",
       edit_todo_deadline: null,
-      edit_todo_priority: 0
+      edit_todo_priority: 0,
+      updateInterval: null
     };
   }
 
   componentDidMount() {
     this.getAllTodos();
+    this.setState({
+      updateInterval: setInterval(() => {
+        this.getAllTodos();
+      }, 30000)
+    });
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.state.updateInterval);
   }
 
   handleClickAddNewTodoIcon = (e) => {
@@ -378,8 +388,16 @@ class App extends React.Component {
       const year = (dateObj.getFullYear().toString()).slice(2);
       const month = month_str[dateObj.getMonth()];
       const date = dateObj.getDate().toString();
-      const hour = dateObj.getHours().toString();
-      const minute = dateObj.getMinutes().toString();
+
+      let hour = dateObj.getHours().toString();
+      if(hour.length === 1) {
+        hour = "0" + hour;
+      }
+
+      let minute = dateObj.getMinutes().toString();
+      if(minute.length === 1) {
+        minute = "0" + minute;
+      }
 
       return date + " " + month + " " + year + ", " + hour + ":" + minute;
     }
@@ -391,7 +409,7 @@ class App extends React.Component {
     return priority_str[item.priority] + " Priority";
   };
 
-  checkDeadlinePassed = (item) => {
+  checkDeadlineExceeded = (item) => {
     return (Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline));
   };
 
@@ -715,7 +733,7 @@ class App extends React.Component {
           }
           <Typography
             variant="overline"
-            color={this.checkDeadlinePassed(item) ? "error" : "textSecondary"}
+            color={this.checkDeadlineExceeded(item) ? "error" : "textSecondary"}
           >
             <span role="img" aria-label="clock">&#128337;</span>{this.generateDateTimeString(item.deadline)}
           </Typography>
@@ -728,7 +746,7 @@ class App extends React.Component {
                 color={this.selectPriorityColorChip(item)}
               />
             }
-            {this.checkDeadlinePassed(item) &&
+            {this.checkDeadlineExceeded(item) &&
               <React.Fragment>
                 &nbsp;
                 <Chip color="secondary" label="Deadline Exceeded" size="small" variant="default" />

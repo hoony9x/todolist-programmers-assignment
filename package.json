@@ -8,7 +8,8 @@
     "start-dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node src/index.js",
     "client": "cd src/webapp && BROWSER=none PORT=3000 npm start",
-    "postinstall": "cd src/webapp && npm install"
+    "postinstall": "cd src/webapp && npm install",
+    "create-db-table": "node src/database_setup.js"
   },
   "repository": {
     "type": "git",

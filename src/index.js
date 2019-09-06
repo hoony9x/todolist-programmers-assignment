@@ -1,5 +1,6 @@
 "use strict";
 
+/* Get HTTP server object */
 const server = require('./http');
 
 /* Set timezone to UTC */
