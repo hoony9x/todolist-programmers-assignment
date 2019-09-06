@@ -1,2 +1,2 @@
 web: npm start
-migrate: npm run create-db-table
+migrate: node src/database_setup.js
