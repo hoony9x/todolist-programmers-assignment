@@ -16,12 +16,14 @@ import {
   Chip
 } from '@material-ui/core';
 
+/* For Icon */
 import {
   NoteAdd as NoteAddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@material-ui/icons';
 
+/* For Date & Time picker */
 import DateFnsUtils from '@date-io/date-fns';
 import enLocale from 'date-fns/locale/en-US';
 import {
@@ -30,8 +32,10 @@ import {
   KeyboardDatePicker,
 } from '@material-ui/pickers';
 
+/* For stable sort */
 import _ from 'lodash';
 
+/* Styling that replaces CSS */
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
@@ -110,6 +114,7 @@ const styles = (theme) => ({
   }
 });
 
+/* API server connection info */
 const server = axios.create({
   baseURL: '/api',
   timeout: 3000
@@ -147,71 +152,81 @@ class App extends React.Component {
     };
   }
 
+  /* After web application is loaded, it will get items from server every 10 seconds. */
   componentDidMount() {
     this.getAllTodos();
     this.setState({
       updateInterval: setInterval(() => {
         this.getAllTodos();
-      }, 30000)
+      }, 10000)
     });
   }
 
+  /* Clear automatic refresh */
   componentWillUnmount() {
     clearInterval(this.state.updateInterval);
   }
 
+  /* Event listener for Add icon */
   handleClickAddNewTodoIcon = (e) => {
-    e.preventDefault();
-
     this.setState({
       is_add_dialog_opened: true
     });
   };
 
+  /* Event listener for closing action (Dialog for add new item) */
   handleCloseAddNewTodoDialog = (e) => {
-    e.preventDefault();
-
     this.setState({
       is_add_dialog_opened: false
     });
   };
 
+  /* Event listener for new title
+   * Update corresponding state for every change
+   */
   handleNewTodoTitleChange = (e) => {
-    e.preventDefault();
-
     this.setState({
       new_todo_title: e.target.value
     });
   };
 
+  /* Event listener for new content
+   * Update corresponding state for every change
+   */
   handleNewTodoContentChange = (e) => {
-    e.preventDefault();
-
     this.setState({
       new_todo_content: e.target.value
     });
   };
 
+  /* Event listener for new deadline
+   * Update corresponding state for every change
+   */
   handleNewTodoDeadlineChange = (date) => {
     this.setState({
       new_todo_deadline: date
     });
   };
 
+  /* Event listener for new deadline
+   * Update corresponding state for every click
+   */
   handleClickClearNewDeadline = (e) => {
-    e.preventDefault();
-
     this.setState({
       new_todo_deadline: null
     });
   };
 
+  /* Event listener for new priority value button
+   * Update corresponding state for every click
+   */
   setNewPriorityValue = (priority_value) => {
     this.setState({
       new_todo_priority: priority_value
     });
   };
 
+  /* Get all todos from API server */
   getAllTodos = async() => {
     let todos = [];
     try {
@@ -242,6 +257,7 @@ class App extends React.Component {
     });
   };
 
+  /* Send request to API server to create new todo_item */
   submitNewTodo = async (e) => {
     e.preventDefault();
 
@@ -268,6 +284,9 @@ class App extends React.Component {
     }
   };
 
+  /* Event listener for edit button click
+   * assign data to corresponding state for every click
+   */
   selectEditTodo = (item) => {
     this.setState({
       is_edit_dialog_opened: true,
@@ -279,6 +298,9 @@ class App extends React.Component {
     });
   };
 
+  /* Event listner for delete button click
+   * Delete corresponding item and get items from server.
+   */
   selectDeleteTodo = async (item) => {
     if(window.confirm("Do you want delete \"" + item.title + "\"?")) {
       try {
@@ -290,6 +312,9 @@ class App extends React.Component {
     }
   };
 
+  /* Event listner for checkbox click
+   * update corresponding item and get items from server.
+   */
   selectTodoCheckBox = async (item, checked) => {
     const datetime_ISO_string = Boolean(item.deadline) === true ? (new Date(item.deadline)).toISOString() : null;
     try {
@@ -307,6 +332,7 @@ class App extends React.Component {
     }
   };
 
+  /* Send request to API server to update existing todo_item */
   submitEditTodo = async (e) => {
     e.preventDefault();
 
@@ -333,6 +359,7 @@ class App extends React.Component {
     }
   };
 
+  /* Event listener for closing action (Dialog for edit existing item) */
   handleCloseEditTodoDialog = (e) => {
     e.preventDefault();
 
@@ -341,6 +368,9 @@ class App extends React.Component {
     });
   };
 
+  /* Event listener for editing existing title
+   * Update corresponding state for every change
+   */
   handleEditTodoTitleChange = (e) => {
     e.preventDefault();
 
@@ -349,6 +379,9 @@ class App extends React.Component {
     });
   };
 
+  /* Event listener for editing existing content
+   * Update corresponding state for every change
+   */
   handleEditTodoContentChange = (e) => {
     e.preventDefault();
 
@@ -357,12 +390,18 @@ class App extends React.Component {
     });
   };
 
+  /* Event listener for editing existing deadline
+   * Update corresponding state for every change
+   */
   handleEditTodoDeadlineChange = (date) => {
     this.setState({
       edit_todo_deadline: date
     });
   };
 
+  /* Event listener for removing existing content
+   * Update corresponding state for every change
+   */
   handleClickClearEditDeadline = (e) => {
     e.preventDefault();
 
@@ -371,12 +410,16 @@ class App extends React.Component {
     });
   };
 
+  /* Event listener for clicking existing priority value
+   * Update corresponding state for every change
+   */
   setEditPriorityValue = (priority_value) => {
     this.setState({
       edit_todo_priority: priority_value
     });
   };
 
+  /* It generates DateTime string for view */
   generateDateTimeString = (date_string) => {
     if(Boolean(date_string) === false) {
       return "-";
@@ -403,16 +446,19 @@ class App extends React.Component {
     }
   };
 
+  /* It generates priority state string */
   displayPriorityString = (item) => {
     const priority_str = ['Low', 'Medium', 'High'];
 
     return priority_str[item.priority] + " Priority";
   };
 
+  /* Checn deadline exceed and return true or false */
   checkDeadlineExceeded = (item) => {
     return (Boolean(item.is_finished) === false && Boolean(item.deadline) === true && Date.now() > new Date(item.deadline));
   };
 
+  /* Alert generator for server request process */
   axiosErrorDisplay = (err) => {
     console.error(err);
 
@@ -424,6 +470,7 @@ class App extends React.Component {
     }
   };
 
+  /* determine color for priority value */
   selectPriorityColorChip = (item) => {
     const color_str = ['default', 'primary', 'secondary'];
     return color_str[item.priority];
